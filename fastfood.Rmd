@@ -1,0 +1,84 @@
+---
+title: "Fast Food Locations"
+author: "Micah Williams"
+date: "11/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(jsonlite)
+```
+
+```{r mcds}
+
+makeMcdsAddress <- function(x){
+  
+  raw <- paste(
+    x$properties$addressLine1,
+    x$properties$customAddress,
+    sep = ', '
+  )
+  
+  clean <- str_remove(raw, '-\\d{4}$')
+  
+}
+
+# import JSON file
+mcds_json <- read_json('data/mcds_us.json')[[1]]
+
+
+# pull out relevant data
+mcds <- tibble(json = mcds_json) %>% 
+  mutate(
+    lat = map_dbl(json, ~ .$geometry$coordinates[[2]]),
+    lon = map_dbl(json, ~ .$geometry$coordinates[[1]]),
+    address = map_chr(json, ~ makeMcdsAddress(.)),
+    type = 'McD'
+  ) %>%
+  select(-json)
+  
+# peek at result
+glimpse(mcds)
+```
+
+```{r bk}
+
+makeBkAddress <- function(x){
+  
+  paste(
+    x$address1,
+    str_to_title(x$city),
+    x$stateProvinceShort,
+    sep = ', '
+    )
+  
+}
+
+# import JSON file
+bk_json <- read_json('data/bk_us.json')$result
+
+# pull out relevant data
+bk <- tibble(json = bk_json) %>%
+  mutate(
+    lat = map_dbl(json, ~ .$latitude),
+    lon = map_dbl(json, ~ .$longitude),
+    country = map_chr(json, ~ .$physicalAddress$country),
+    address = map_chr(json, ~ makeBkAddress(.$physicalAddress)),
+    type = 'BK'
+  ) %>%
+  filter(country == 'USA') %>%
+  select(-c(json, country))
+
+# peek at result
+glimpse(bk)
+```
+
+```{r}
+fastfood <- bind_rows(mcds, bk)
+
+glimpse(fastfood)
+```
+
