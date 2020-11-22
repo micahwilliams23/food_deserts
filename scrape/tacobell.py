@@ -19,16 +19,14 @@ page_soup = soup(page_html, 'html.parser')
 
 states = page_soup.findAll('a', {'class': 'Directory-listLink'})
 
-with open('data/tacobell.csv', 'w') as f:
+with open('data/tacobell.csv', 'w', newline = '') as f:
 
     writer = csv.writer(f)
-    writer.writerow(['address'])
+    writer.writerow(['street', 'city', 'state', 'zip_code'])
 
 for state in states:
     
     state_url = base_url + state['href']
-
-    requests.get(state_url, headers = req_headers)
 
     page_html = requests.get(state_url, headers = req_headers).text
 
@@ -40,33 +38,24 @@ for state in states:
         
         city_url = base_url + city['href']
 
-        store_count = re.sub('\\D', '', city['data-count'])
-
         page_html = requests.get(city_url, headers = req_headers).text
 
         page_soup = soup(page_html, 'html.parser')
 
-        if store_count == '1':
+        addresses = page_soup.findAll('address', {'class': 'c-address'})
 
-            address = page_soup.findAll('address', {'class': 'c-address'})[0].text
+        with open('data/tacobell.csv', 'a', newline = '') as f:
+                
+            writer = csv.writer(f)
 
-            with open('data/tacobell.csv', 'a') as f:
+            for address in addresses:
 
-                writer = csv.writer(f)
-                writer.writerow([address])
+                street = address.find('span', {'class':'c-address-street-1'}).text
+                city = address.find('span', {'class':'c-address-city'}).text
+                state = address.find('abbr', {'class':'c-address-state'}).text
+                zip_code = address.find('span', {'class':'c-address-postal-code'}).text
 
-            print(address)
+                writer.writerow([street, city, state, zip_code])
 
-        else:
+                print(street+','+city+','+state+','+zip_code)
 
-            addresses = page_soup.findAll('address', {'class': 'c-address'})
-
-            with open('data/tacobell.csv', 'a') as csvfile:
-
-                writer = csv.writer(f)
-
-                for address in addresses:
-
-                    writer.writerow([address.text])
-
-                    print(address.text)
