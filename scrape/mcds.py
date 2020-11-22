@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup as soup
 import requests
 import json
 
-radius = '4000'
+radius = '1000000'
 # lat = '21.437871'
 # lon = '-157.986606'
 lat = '44.967243'
